@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CTF Workshop</title>
+  <style>
+
+    /* Command table */
+.cmd-wrap { margin:12px 0; }
+.cmd-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
+.cmd-table { width:100%; border-collapse:collapse; background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.04); border-radius:12px; overflow:hidden; }
+.cmd-table thead th { text-align:left; padding:10px 14px; background:rgba(0,0,0,.14); font-weight:600; color:var(--muted); font-size:.95rem }
+.cmd-table thead th:nth-child(2){ text-align:right }
+.cmd-table td { padding:12px 14px; border-top:1px dashed rgba(255,255,255,.03); vertical-align:middle }
+.cmd-table code { font-family:inherit; font-size:.95rem; white-space:nowrap; display:inline-block; overflow:auto; max-width:100% }
+.cmd-table tbody tr td:last-child { width:108px; text-align:right }
+@media (max-width:700px){
+  .cmd-table thead { display:none }
+  .cmd-table, .cmd-table tbody, .cmd-table tr, .cmd-table td { display:block; width:100% }
+  .cmd-table tr { margin-bottom:10px; border-radius:8px; border:1px solid rgba(255,255,255,.02); padding:8px }
+  .cmd-table td { padding:8px; border-top:none }
+  .cmd-table td:first-child { font-weight:700; color:var(--muted) }
+  .cmd-table td:last-child { text-align:left }
+}
+
+    /* =====================
+       THEME TOKENS
+    ======================*/
+    :root{
+      --bg:#0b0f12;          /* page background */
+      --panel:#0f151b;       /* cards/panels */
+      --text:#e6f1ff;        /* main text */
+      --muted:#9bb0c2;       /* secondary text */
+      --accent:#00ffd1;      /* hacker neon */
+      --accent-2:#ffb86c;    /* projector-friendly amber */
+      --radius:16px;         /* card corners */
+      --content-max:1080px;  /* content column width */
+      --content-pad:24px;    /* page gutters */
+      --section-pad:64px;    /* spacing per section */
+    }
+    [data-theme="amber"]{ --accent: var(--accent-2); }
+
+    /* =====================
+       BASE
+    ======================*/
+    html{ height:100%; scroll-behavior:smooth; }
+    html,body{ min-width:0; overflow-x:hidden; }
+    body{
+      margin:0; background:
+        radial-gradient(ellipse at 20% 10%, rgba(0,255,102,0.04), transparent 12%),
+        var(--bg);
+      color:var(--text);
+      font:16px/1.6 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    a{ color:var(--accent); text-decoration:none }
+    img{ max-width:100%; height:auto; display:block }
+    *{ box-sizing:border-box }
+
+    /* =====================
+       LAYOUT & COMPONENTS
+    ======================*/
+    .wrap{ max-width:var(--content-max); margin:0 auto; padding:0 var(--content-pad); }
+    .title{ font-size:52px; line-height:1.05; margin:.2em 0 .35em }
+    .subtitle,.lead{ color:var(--muted) }
+
+    .grid{ display:grid; gap:16px }
+    /* force single column everywhere */
+    .cols-2,
+    .cols-3{
+      grid-template-columns: 1fr !important
+    }
+
+    .card{ background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius:var(--radius); padding:20px; box-shadow:0 10px 28px rgba(0,0,0,.45); height:100%; display:flex; flex-direction:column }
+    .badge{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid rgba(255,255,255,.12); border-radius:999px; color:var(--accent) }
+    .btn{ display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:transparent; color:var(--text); cursor:pointer }
+    .btn:hover{ border-color:var(--accent) }
+    .btn.copy{ font-size:.9rem }
+    pre.snip{ background:rgba(0,0,0,.5); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); overflow:auto; white-space:pre-wrap; word-break:break-word }
+    .placeholder{ background:repeating-linear-gradient(45deg, rgba(255,255,255,.05), rgba(255,255,255,.05) 12px, transparent 12px, transparent 24px);
+      border:1px dashed rgba(255,255,255,.24); border-radius:14px; min-height:220px; display:flex; align-items:center; justify-content:center; color:var(--muted); text-align:center }
+
+    /* Header / Nav */
+    .site-header{ position:sticky; top:0; z-index:50; backdrop-filter: blur(8px);
+      background:rgba(11,15,18,.65); border-bottom:1px solid rgba(255,255,255,.09) }
+    .nav{ max-width:var(--content-max); margin:0 auto; padding:10px var(--content-pad); display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .brand{ display:flex; align-items:center; gap:10px; margin-right:auto }
+    .logo{ width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg, var(--accent), transparent); border:1px solid rgba(255,255,255,.25) }
+    .nav a{ color:var(--muted); padding:6px 10px; border-radius:8px; border:1px solid transparent }
+    .nav a[aria-current="page"]{ color:var(--text); border-color:var(--accent) }
+    .nav a:hover{ color:var(--text); border-color:rgba(255,255,255,.14) }
+
+    /* Sections */
+    main{ counter-reset: section }
+    section{ scroll-margin-top:72px; padding:var(--section-pad) 0 }
+
+    /* Progress bar */
+    .progress{ position:fixed; left:0; top:0; height:4px; width:0%; z-index:60;
+      background:linear-gradient(90deg, var(--accent), transparent); box-shadow:0 8px 20px rgba(0,0,0,.35);
+      transition:width .12s linear }
+
+    /* Overlays */
+    .overlay{ position:fixed; inset:0; z-index:80; display:grid; align-content:start; gap:0;
+      background:rgba(0,0,0,.6); backdrop-filter:blur(6px);
+      opacity:0; pointer-events:none; transform:translateY(6px);
+      transition:opacity .25s ease, transform .25s ease }
+    .overlay.active{ opacity:1; pointer-events:auto; transform:none }
+    .overlay > .wrap{ width:100% }
+
+    /* Speaker notes */
+    .notes{ position:fixed; right:16px; bottom:16px; z-index:85; max-width:360px; background:var(--panel);
+      border:1px solid rgba(255,255,255,.12); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.45);
+      padding:14px; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .25s, transform .25s }
+    .notes.active{ opacity:1; pointer-events:auto; transform:none }
+
+    /* Scroll reveals */
+    .reveal{ opacity:0; transform:translateY(8px); filter:saturate(.6); transition:opacity .35s, transform .35s, filter .35s }
+    .reveal.show{ opacity:1; transform:none; filter:none }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion:reduce){
+      html{ scroll-behavior:auto }
+      .reveal{ transition:none }
+      .overlay{ transition:none }
+      .progress{ transition:none }
+    }
+
+    /* Responsive */
+    @media (max-width:1100px){ .title{ font-size:44px } .cols-2{ grid-template-columns:1fr } }
+    @media (max-width:780px){ .title{ font-size:36px } .cols-3{ grid-template-columns:1fr 1fr } .cols-2{ grid-template-columns:1fr } } .cols-3{ grid-template-columns:1fr 1fr }
+    @media (max-width:520px){ :root{ --content-pad:12px; --section-pad:40px } }
+
+    /* Lock background scroll when overlay is open (supported browsers) */
+    body:has(.overlay.active){ overflow:hidden }
+  </style>
+</head>
+<body>
+  <a href="#hero" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden">Skip to content</a>
+  <div class="progress" id="progress"></div>
+
+  <header class="site-header">
+    <nav class="nav">
+      <div class="brand"><div class="logo"></div><strong>CTF Workshop</strong></div>
+      <a href="#hero">Intro</a>
+      <a href="#ctfd">CTFd</a>
+      <a href="#categories">Categories</a>
+      <a href="#linux">Linux</a>
+      <a href="#sqli">SQLi</a>
+      <a href="#rules">Rules</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section id="hero">
+      <div class="wrap">
+  <h1 class="title"><strong>CTF Workshop</strong></h1>
+  <p class="subtitle"><strong>Capture the Flag</strong>: Overview</p>
+        <p class="subtitle">Presented by Cybersecurity Club Board Members at CSUDH</p>
+  <div class="badge" style="margin-top:12px"><strong>Tip:</strong> Have <em>fun</em> and learn a lot</div>
+        <div class="grid cols-2" style="margin-top:18px">
+          <div class="card">
+            <h3>Learning Objectives</h3>
+            <ul>
+              <li class="reveal show">Create and navigate a <strong>CTFd</strong> account and team.</li>
+              <li class="reveal show">Recognize common <strong>Jeopardy categories</strong> and initial solving approaches.</li>
+              <li class="reveal show">Use essential <strong>Linux</strong> commands during <strong>CTFs</strong>.</li>
+              <li class="reveal show">Understand a basic <strong>SQL injection</strong> foothold and how to pulse a target with <strong>nmap</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTFd -->
+    <section id="ctfd">
+      <div class="wrap">
+        <div class="card">
+         <h2 class="title"><strong>CTFd 101</strong></h2>
+          <p class="lead">What is CTF and CTFd?</p>
+        </div>
+        <div class="grid cols-2">
+          <div class="card"><p class="reveal">A CTF <strong style="color:var(--accent)">(Capture The Flag)</strong> is a competition where participants find and submit flags by exploiting vulnerabilities to demonstrate cybersecurity skills.</p></div>
+          <div class="card"><p class="reveal"><strong style="color:var(--accent)">CTFd</strong> is an open‑source platform to host and manage CTF competitions.</p></div>
+          <div class="card">
+            <p class="reveal"><em>Steps to Join:</em></p>
+            <ol>
+              <li class="reveal">Visit <a class="link" href="https://ctf.example.com" target="_blank" rel="noopener noreferrer">https://ctf.example.com</a></li>
+              <li class="reveal">Create account / Join team</li>
+              <li class="reveal">Open a challenge → read description</li>
+              <li class="reveal">Submit flag <code>flag{like_this}</code></li>
+            </ol>
+            <p class="reveal"><em>Tip:</em> Easy points first; read hints; mind the scoreboard.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section id="categories">
+      <div class="wrap">
+        <div class="card"><h2 class="title">Jeopardy Categories</h2><p class="lead">What they are • Typical tools • First steps</p></div>
+        <div class="grid cols-2" style="margin-top:12px" id="catGrid">
+          <!-- Web -->
+          <div class="card">
+              <h3><strong>Web Challenges</strong></h3>
+             <p style="margin-top:8px">
+                  Explore common web-application vulnerabilities — authentication flaws, injection, XSS, insecure file uploads, and hidden endpoints.
+    Learn how user input travels to servers, how to inspect requests/responses, and how to reason about attack surface in a controlled testing environment.
+  
+                <h3><strong>Learning objectives</strong></h3>
+                  <ul>
+                    <li>Identify vulnerable inputs (login forms, search boxes, upload endpoints).</li>
+                    <li>Use interception and fuzzing to discover hidden parameters and endpoints.</li>
+                    <li>Understand basic SQL injection and XSS payload mechanics and how to verify them safely.</li>
+                   </ul>
+             </p>
+            <div class="badge">Tools: Burp Suite (Proxy, Repeater), Burp Collaborator, curl , wget , sqlmap (for automated
+SQLi testing), ffuf / gobuster (fuzzing), browser DevTools, Nikto, OWASP ZAP</div>
+            <pre class="snip">Try first: ' OR '1'='1 -- in login inputs</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="' OR '1'='1">Copy snippet</button>
+              <a class="btn" href="https://portswigger.net/web-security/sql-injection" target="_blank" rel="noopener noreferrer">SQLi primer</a>
+            </div>
+          </div>
+
+          <!-- Crypto -->
+          <div class="card">
+  <h3><strong>Cryptography</strong></h3>
+<p style="margin-top:8px">
+  Explore classical and modern cryptographic concepts used in CTFs and real-world systems — symmetric vs. asymmetric encryption, hashing, encoding, padding, and common misuses.
+  Learn how to recognize weak or misapplied crypto, how to decode/transform common encodings, and how to approach basic cryptanalysis in a safe lab environment.
+</p>
+
+<h3><strong>Learning objectives</strong></h3>
+<ul>
+  <li>Recognize common primitives and misconfigurations (ECB vs CBC, weak key reuse, improper IV handling).</li>
+  <li>Decode and convert between common encodings (Base64, hex, URL, ASCII) and use tools like CyberChef/OpenSSL to inspect data.</li>
+  <li>Apply basic cryptanalysis techniques (frequency analysis, padding-oracle thinking, brute-force/hashing strategies) to recover secrets on lab targets.</li>
+</ul>
+            <div class="badge">Tools: CyberChef, python / pycryptodome , hashcat (for cracking when appropriate),
+openssl , online decoders, gmpy2 for big-int math, sage for advanced math.
+</div>
+            
+            <pre class="snip">Try first: echo 'c3RyaW5n' | base64 --decode</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="echo 'c3RyaW5n' | base64 --decode">Copy</button>
+              <a class="btn" href="https://gchq.github.io/CyberChef/" target="_blank" rel="noopener noreferrer">Open CyberChef</a>
+            </div>
+          </div>
+
+          <!-- Forensics -->
+          <div class="card">
+          <h3><strong>Forensics</strong></h3>
+<p style="margin-top:8px">
+  Investigate digital evidence from disk images, memory captures, and log files to reconstruct events and recover artifacts.
+  Learn how to preserve, extract, and analyze traces (file metadata, deleted files, browser history, timelines, and volatile memory) in a controlled lab environment.
+</p>
+
+<h3>Learning objectives</h3>
+<ul>
+  <li>Identify and extract key artifacts (file metadata, deleted files, browser history, registry entries, and system logs).</li>
+  <li>Use forensic tools and techniques (Autopsy / Sleuth Kit, FTK Imager, Volatility, log parsing) to analyze images and memory captures.</li>
+  <li>Reconstruct event timelines and validate integrity (file carving, timeline correlation, hashing, and basic chain-of-custody practices).</li>
+</ul>
+            <div class="badge">Tools: Wireshark/tshark, strings , binwalk , foremost , scalpel , volatility /
+volatility3 (memory analysis), autopsy /SleuthKit, xmount , fls / icat </div>
+            <pre class="snip">Try first: strings suspectfile | head -n 50</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="strings suspectfile | head -n 50">Copy</button>
+              <a class="btn" href="https://www.sleuthkit.org/autopsy/" target="_blank" rel="noopener noreferrer">Autopsy</a>
+            </div>
+          </div>
+
+          <!-- Reverse / Pwn -->
+          <div class="card">
+            <h3><strong>Reverse / Pwn</strong></h3>
+<p style="margin-top:8px">
+  Analyze compiled binaries to find logic flaws, memory corruption, and input-parsing bugs you can exploit.
+  Learn how to identify calling conventions, control-flow weaknesses, and vulnerable I/O paths in a safe CTF/lab environment.
+</p>
+
+<h3>Learning objectives</h3>
+<ul>
+  <li>Determine binary metadata (architecture, endianness, linkage, protections) and identify likely attack surfaces.</li>
+  <li>Use static and dynamic analysis to trace input parsing, locate vulnerable functions, and discover exploitable conditions (buffer overflows, format strings, use-after-free).</li>
+  <li>Build and test exploits: craft payloads, control instruction pointer or data flow, and validate exploitation with debuggers and instrumentation in a lab environment.</li>
+</ul>
+            <div class="badge">Tool:   Ghidra, radare2 / Cutter, pwntools, GDB / GDB-PEDA / GDB-PWN, objdump, readelf, strace, ltrace</div>
+            <pre class="snip">Try first: file challenge.bin; strings challenge.bin</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="file challenge.bin; strings challenge.bin">Copy</button>
+              <a class="btn" href="https://ghidra-sre.org/" target="_blank" rel="noopener noreferrer">Ghidra</a>
+            </div>
+          </div>
+
+          <!-- Stego -->
+          <div class="card">
+          <h3><strong>Steganography</strong></h3>
+<p style="margin-top:8px">
+  Hide and detect data concealed inside carrier files (images, audio, video, and archives). Learn common hiding techniques (LSB, metadata, appended payloads, and container formats) and reliable ways to reveal and extract hidden messages in a controlled CTF/lab environment.
+</p>
+
+<h3>Learning objectives</h3>
+<ul>
+  <li>Identify likely carriers and hiding methods (image LSB, metadata, appended data, audio stego, archive wrappers).</li>
+  <li>Use inspection and analysis techniques to detect hidden data (file headers, file-size anomalies, entropy/statistical checks, and EXIF/metadata review).</li>
+  <li>Extract and recover payloads using practical tools and workflows (strings, binwalk, exiftool, stegsolve/zsteg, steghide, and manual bit-level inspection when needed).</li>
+</ul>
+
+            <div class="badge">Tool:  steghide , zsteg (PNG/GIF LSBs), exiftool , binwalk , stegsolve , outguess , Audacity (for audio), steghide , strings </div>
+            <pre class="snip">Try first: exiftool image.png</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="exiftool image.png">Copy</button>
+              <a class="btn" href="https://github.com/zer00d4y/stegsolve" target="_blank" rel="noopener noreferrer">Stegsolve</a>
+            </div>
+          </div>
+
+          <!-- Networking / OSINT -->
+          <div class="card">
+          <h3><strong>Networking / OSINT</strong></h3>
+<p style="margin-top:8px">
+  Discover and map networked hosts, services, and publicly available information about targets. This category combines active network reconnaissance (port/service enumeration, banner grabbing) with passive OSINT (domain records, certificate transparency, public assets) to build a prioritized attack surface in a lab/CTF environment.
+</p>
+
+<h3>Learning objectives</h3>
+<ul>
+  <li>Enumerate hosts and services to identify exposed panels and potential entry points (HTTP, SSH, RDP, SMB, etc.).</li>
+  <li>Correlate public OSINT signals (DNS, WHOIS, certs, subdomains, leaked metadata) to discover additional assets and pivot points.</li>
+  <li>Prioritize targets by service version, exposure, and likelihood of misconfiguration; gather banners and service fingerprints to plan safe follow-up tests.</li>
+</ul>
+            <div class="badge">Tool: Google dorking, theHarvester , shodan (when allowed), whois , dig , pastebin, search tools, Twitter search, Maltego (if available), simple web searches, browser bookmarks, nmap , tcpdump , Wireshark, netcat , scapy , ettercap (for local labs), ss ,
+sshd /service clients
+</div>
+            <pre class="snip">Try first: nmap -sC -sV -p- TARGET</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="nmap -sC -sV -p- TARGET">Copy</button>
+              <a class="btn" href="https://nmap.org/book/man-briefoptions.html" target="_blank" rel="noopener noreferrer">nmap cheats</a>
+            </div>
+          </div>
+
+          <!-- Password / Hash cracking -->
+          <div class="card">
+            <h3>Password / Hash cracking</h3>
+<p style="margin-top:8px">
+  Recover passwords from captured hashes using targeted wordlists, rules, and GPU-accelerated cracking where appropriate.
+  Learn how to identify hash algorithms, choose efficient attack modes (wordlist, rule, mask, hybrid), and reason about salts, iterations, and defensive mitigations in a controlled lab/CTF environment.
+</p>
+
+<h3>Learning objectives</h3>
+<ul>
+  <li>Identify common hash algorithms and formats (MD5, SHA1, NTLM, bcrypt, PBKDF2) and know which are GPU-friendly vs intentionally slow.</li>
+  <li>Use wordlists, rules, masks, and hybrid attacks effectively to increase cracking success (start with common lists like rockyou).</li>
+  <li>Understand salting, iterations, and how they affect cracking strategy and expected runtime; know when to switch to targeted or offline analysis.</li>
+</ul>
+            <div class="badge">Tool: hashcat (GPU-accelerated), John the Ripper (john/johnny), hash-identifier tools (hashid, hash-identifier), wordlists (rockyou), and rule sets</div>
+            <pre class="snip">Try first: hashid hash.txt
+john --wordlist=rockyou.txt hash.txt</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="john --wordlist=rockyou.txt hash.txt">Copy</button>
+              <a class="btn" href="https://hashcat.net/hashcat/" target="_blank" rel="noopener noreferrer">Hashcat</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Linux -->
+    <section id="linux">
+      <div class="wrap">
+        <div class="grid cols-2">
+          <div class="card">
+            <h2 class="title">Linux Fundamentals</h2>
+          <!-- Linux commands: table -->
+<div class="cmd-wrap reveal">
+  <div class="cmd-header">
+    <strong>Linux quick commands</strong>
+  </div>
+
+  <table class="cmd-table" aria-label="Linux commands">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Command</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Navigation & files</td>
+        <td><code>ls • cd • pwd • tree</code></td>
+      </tr>
+      <tr>
+        <td>View & edit</td>
+        <td><code>cat • less • head • tail • nano • vim</code></td>
+      </tr>
+      <tr>
+        <td>Manual & help</td>
+        <td><code>man &lt;command&gt; • --help • help</code></td>
+      </tr>
+      <tr>
+        <td>Metadata</td>
+        <td><code>xattr -l &lt;file&gt; • getfattr -d &lt;file&gt;</code></td>
+      </tr>
+      <tr>
+        <td>Search & text</td>
+        <td><code>grep -R • egrep • awk • sed</code></td>
+      </tr>
+      <tr>
+        <td>Networking</td>
+        <td><code>ifconfig • ip a • ping • netstat -tuln • curl • wget</code></td>
+      </tr>
+      <!-- add other rows similarly -->
+    </tbody>
+  </table>
+</div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SQLi demo -->
+    <section id="sqli">
+      <div class="wrap">
+        <div class="card"><h2 class="title">Mini Demo: SQLi</h2><p class="lead">Learning-only concept demo.</p></div>
+        <div class="grid cols-2">
+          <div class="card"><div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+            <a class="btn" href="https://hacksplaining.com/lessons/sql-injection/start" target="_blank" rel="noopener noreferrer">Hacksplanning</a>
+          </div></p></div>
+          
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Rules -->
+    <section id="rules">
+      <div class="wrap">
+        <div class="card"><h2 class="title">Rules & Safe Practices</h2></div>
+        <div class="card">
+          <ul>
+            <li class="reveal">Only interact with event‑provided hosts & services.</li>
+            <li class="reveal">No DoS, brute forcing, or targeting others’ machines.</li>
+            <li class="reveal">Respect rate limits & infra stability.</li>
+            <li class="reveal">Ask staff if unsure about scope.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+
+
+  </main>
+
+  <footer>
+    <div class="wrap" style="padding:48px 0 80px; color:var(--muted); border-top:1px solid rgba(255,255,255,.08); margin-top:32px">
+      <div>© CTF Workshop — Cybersecurity Club at CSUDH</div>
+    </div>
+  </footer>
+
+  <!-- Overlays -->
+  <div class="overlay" id="linuxOverlay" role="dialog" aria-modal="true" aria-label="Linux quick overlay">
+    <h2 style="margin:16px 24px 0">Linux One‑Liners</h2>
+    <div class="wrap" style="padding-top:16px">
+      <div class="grid cols-2">
+        <div class="card"><pre>strings file.bin | grep flag
+base64 -d in.txt &gt; out
+xxd -p file | tr -d '\n' | wc -c</pre></div>
+        <div class="card"><pre>grep -R "needle" .
+hexdump -C sample.bin | less
+find . -type f -size -200k</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="demoOverlay" role="dialog" aria-modal="true" aria-label="Live demo checklist">
+    <h2 style="margin:16px 24px 0">Live Demo Checklist</h2>
+    <div class="wrap" style="padding-top:16px">
+      <ol id="demoOverlayList"></ol>
+      <div style="margin-top:16px"><button class="btn" id="resetDemo">Reset checks</button></div>
+    </div>
+  </div>
+
+  <div class="notes" id="notes">
+    <strong>Speaker notes (placeholder)</strong>
+    <ul>
+      <li>Open strong; reassure newcomers.</li>
+      <li>Emphasize safety & scope.</li>
+      <li>Invite write‑ups after event.</li>
+    </ul>
+  </div>
+
+  <script>
+    // --- Progress (robust) ---
+    (function(){
+      const bar = document.getElementById('progress');
+      function update(){
+        const d = document.documentElement;
+        const top = window.scrollY || window.pageYOffset || d.scrollTop || 0;
+        const max = (d.scrollHeight - d.clientHeight) || 1;
+        const pct = Math.min(100, Math.max(0, (top/max)*100));
+        bar.style.width = pct.toFixed(2) + '%';
+        document.title = 'CTF Workshop — ' + Math.round(pct) + '%';
+      }
+      addEventListener('scroll', update, {passive:true});
+      addEventListener('load', update);
+    })();
+
+    // --- Active nav highlight ---
+    (function(){
+      const links = Array.from(document.querySelectorAll('.nav a[href^="#"]'));
+      const map = Object.fromEntries(links.map(a => [a.getAttribute('href'), a]));
+      const sections = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+      const io = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{
+          if(e.isIntersecting){
+            const href = '#' + e.target.id;
+            links.forEach(a => a.removeAttribute('aria-current'));
+            map[href]?.setAttribute('aria-current','page');
+          }
+        });
+      },{ rootMargin:'-40% 0px -55% 0px', threshold:0.01 });
+      sections.forEach(s => io.observe(s));
+    })();
+
+    // --- Reveal on scroll ---
+    (function(){
+      const revealIO = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('show'); });
+      },{ threshold:0.12 });
+      document.querySelectorAll('.reveal').forEach(el=> revealIO.observe(el));
+    })();
+
+    // --- Theme toggle ---
+    document.getElementById('themeBtn').addEventListener('click', ()=>{
+      document.body.dataset.theme = document.body.dataset.theme === 'amber' ? '' : 'amber';
+    });
+
+    // --- Overlays ---
+    const linuxOverlay = document.getElementById('linuxOverlay');
+    const demoOverlay = document.getElementById('demoOverlay');
+    const notes = document.getElementById('notes');
+    const toggle = el => el.classList.toggle('active');
+    document.getElementById('linuxBtn').addEventListener('click', ()=> toggle(linuxOverlay));
+    document.getElementById('demoBtn').addEventListener('click', ()=> { toggle(demoOverlay); syncDemo(); });
+    document.getElementById('notesBtn').addEventListener('click', ()=> toggle(notes));
+
+    // --- Demo overlay sync ---
+    const demoList = document.getElementById('demoList');
+    const demoOverlayList = document.getElementById('demoOverlayList');
+    function syncDemo(){
+      if(!demoList||!demoOverlayList) return; demoOverlayList.innerHTML='';
+      demoList.querySelectorAll('li').forEach(li=>{
+        const clone = li.cloneNode(true);
+        const srcInput = li.querySelector('input');
+        const dstInput = clone.querySelector('input');
+        if(dstInput){
+          dstInput.checked = srcInput?.checked || false;
+          dstInput.addEventListener('change', ()=>{ srcInput.checked = dstInput.checked; });
+        }
+        demoOverlayList.appendChild(clone);
+      });
+    }
+    document.getElementById('resetDemo')?.addEventListener('click', ()=>{
+      document.querySelectorAll('#demoList input, #demoOverlayList input').forEach(c=> c.checked=false);
+    });
+
+    // --- Copy to clipboard for buttons with [data-copy] ---
+    (function(){
+      function toast(btn, ok=true){
+        const t = document.createElement('span');
+        t.textContent = ok ? 'Copied!' : 'Failed';
+        t.style.marginLeft = '8px'; t.style.fontSize = '.85rem'; t.style.opacity = '.9';
+        btn.after(t); setTimeout(()=> t.remove(), 1200);
+      }
+      document.addEventListener('click', async (e)=>{
+        const btn = e.target.closest('button.copy[data-copy]');
+        if(!btn) return;
+        const text = btn.getAttribute('data-copy');
+        try{ await navigator.clipboard.writeText(text); toast(btn,true); }
+        catch{
+          const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove(); toast(btn,true);
+        }
+      });
+    })();
+
+    // --- Optional scroll-lock fallback if :has() not supported ---
+    (function(){
+      const supportsHas = typeof CSS!== 'undefined' && CSS.supports && CSS.supports('selector(body:has(*))');
+      if (supportsHas) return;
+      const overlays = [linuxOverlay, demoOverlay];
+      const obs = new MutationObserver(()=>{
+        const anyActive = overlays.some(el => el && el.classList.contains('active'));
+        document.body.style.overflow = anyActive ? 'hidden' : '';
+      });
+      overlays.forEach(el => el && obs.observe(el, { attributes:true, attributeFilter:['class'] }));
+    })();
+  </script>
+</body>
+</html>
