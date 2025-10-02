@@ -227,28 +227,7 @@
       <div class="wrap">
         <div class="card"><h2 class="title">Jeopardy Categories</h2><p class="lead">What they are • Typical tools • First steps</p></div>
         <div class="grid cols-2" style="margin-top:12px" id="catGrid">
-          <!-- Web -->
-          <div class="card">
-              <h3><strong>Web Challenges</strong></h3>
-             <p style="margin-top:8px">
-                  Explore common web-application vulnerabilities — authentication flaws, injection, XSS, insecure file uploads, and hidden endpoints.
-    Learn how user input travels to servers, how to inspect requests/responses, and how to reason about attack surface in a controlled testing environment.
-  
-                <h3><strong>Learning objectives</strong></h3>
-                  <ul>
-                    <li>Identify vulnerable inputs (login forms, search boxes, upload endpoints).</li>
-                    <li>Use interception and fuzzing to discover hidden parameters and endpoints.</li>
-                    <li>Understand basic SQL injection and XSS payload mechanics and how to verify them safely.</li>
-                   </ul>
-             </p>
-            <div class="badge">Tools: Burp Suite (Proxy, Repeater), Burp Collaborator, curl , wget , sqlmap (for automated
-SQLi testing), ffuf / gobuster (fuzzing), browser DevTools, Nikto, OWASP ZAP</div>
-            <pre class="snip">Try first: ' OR '1'='1 -- in login inputs</pre>
-            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
-              <button class="btn copy" data-copy="' OR '1'='1">Copy snippet</button>
-              <a class="btn" href="https://portswigger.net/web-security/sql-injection" target="_blank" rel="noopener noreferrer">SQLi primer</a>
-            </div>
-          </div>
+         
 
           <!-- Crypto -->
           <div class="card">
@@ -444,6 +423,28 @@ john --wordlist=rockyou.txt hash.txt</pre>
         </div>
       </div>
     </section>
+     <!-- Web -->
+          <div class="card">
+              <h3><strong>Web Challenges</strong></h3>
+             <p style="margin-top:8px">
+                  Explore common web-application vulnerabilities — authentication flaws, injection, XSS, insecure file uploads, and hidden endpoints.
+    Learn how user input travels to servers, how to inspect requests/responses, and how to reason about attack surface in a controlled testing environment.
+  
+                <h3><strong>Learning objectives</strong></h3>
+                  <ul>
+                    <li>Identify vulnerable inputs (login forms, search boxes, upload endpoints).</li>
+                    <li>Use interception and fuzzing to discover hidden parameters and endpoints.</li>
+                    <li>Understand basic SQL injection and XSS payload mechanics and how to verify them safely.</li>
+                   </ul>
+             </p>
+            <div class="badge">Tools: Burp Suite (Proxy, Repeater), Burp Collaborator, curl , wget , sqlmap (for automated
+SQLi testing), ffuf / gobuster (fuzzing), browser DevTools, Nikto, OWASP ZAP</div>
+            <pre class="snip">Try first: ' OR '1'='1 -- in login inputs</pre>
+            <div class="grid" style="grid-template-columns:auto auto;gap:8px;margin-top:8px">
+              <button class="btn copy" data-copy="' OR '1'='1">Copy snippet</button>
+              <a class="btn" href="https://portswigger.net/web-security/sql-injection" target="_blank" rel="noopener noreferrer">SQLi primer</a>
+            </div>
+          </div>
 
     <!-- SQLi demo -->
     <section id="sqli">
